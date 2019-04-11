@@ -1,0 +1,21 @@
+#!/bin/bash
+
+tmp_dir="/tmp/extract-archive-mem-test"
+
+archive_sizes=(5 20 80)
+
+for index in ${!archive_sizes[@]}; do
+	size=${archive_sizes[$index]}
+	echo "generating ${size}MB archive..."
+	filePath="${tmp_dir}/sample${index}.zip"
+	./generate-archive.js "$filePath" "$size"
+	du -sh "$filePath"
+done
+
+for index in ${!archive_sizes[@]}; do
+	size=${archive_sizes[$index]}
+	echo "peak memory when extracting ${size}MB archive:"
+	/usr/bin/time -f "KB=%M" ./extract-archive.js "${tmp_dir}/sample${index}.zip"
+done
+
+rm -r "$tmp_dir"

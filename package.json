@@ -1,0 +1,38 @@
+{
+	"name": "extract-archive-without-blowing-up",
+	"version": "0.0.1",
+	"description": "Recursively extract archives up to a size limit.",
+	"main": "index.js",
+	"scripts": {
+		"test": "node index.spec.js"
+	},
+	"keywords": [
+		"unzip",
+		"unpack",
+		"extract",
+		"archive",
+		"zip",
+		"bomb",
+		"zip-bomb",
+		"size",
+		"limit",
+		"large",
+		"7z"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/m59peacemaker/node-extract-archive-without-blowing-up"
+	},
+	"author": "Johnny Hauser <johnnyhauser@gmail.com>",
+	"license": "CC0-1.0",
+	"dependencies": {
+		"7zip-bin": "^4.1.0",
+		"node-7z": "^1.1.0"
+	},
+	"devDependencies": {
+		"fs-extra": "^7.0.1",
+		"is-archive": "^1.0.1",
+		"uuid-v4": "^0.1.0",
+		"zora": "^3.0.1"
+	}
+}
