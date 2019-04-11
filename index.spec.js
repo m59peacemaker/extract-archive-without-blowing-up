@@ -24,7 +24,8 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 
 			t.equal(
 				await fs.readFile(tmpPath('extracted', 'foo.txt'), 'utf8'),
-				'some foo text'
+				'some foo text',
+				'extracted archive files to outputPath'
 			)
 		} catch (error) {
 			console.log(error)
@@ -33,18 +34,26 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 		await fs.remove(tmp)
 	})
 
-	await test('maintains directory structure', async t => {
-		try {
-			await fs.outputFile(tmpPath('files', 'a.txt'), 'aaa')
-			await fs.outputFile(tmpPath('files', 'one', 'b.txt'), 'bbb')
-			await fs.outputFile(tmpPath('files', 'one', 'two', 'c.txt'), 'ccc')
-			await seven.add(tmpPath('files.zip'), tmpPath('files/*'))
+	await test('', async () => {
+		await fs.outputFile(tmpPath('files', 'a.txt'), 'aaa')
+		await fs.outputFile(tmpPath('files', 'one', 'b.txt'), 'bbb')
+		await fs.outputFile(tmpPath('files', 'one', 'two', 'c.txt'), 'ccc')
+		await seven.add(tmpPath('files.zip'), tmpPath('files/*'))
 
-			await extractArchive({
-				inputPath: tmpPath('files.zip'),
-				outputPath: tmpPath('extracted'),
-			})
+		const { files } = await extractArchive({
+			inputPath: tmpPath('files.zip'),
+			outputPath: tmpPath('extracted')
+		})
 
+		await test('returns flat list of files', async t => {
+			files.forEach(file => t.equal(
+				Object.keys(file).sort(),
+				[ 'filePath', 'fileName' ].sort(),
+				JSON.stringify(file)
+			))
+		})
+
+		await test('maintains directory structure', async t => {
 			t.equal(
 				await fs.readdir(tmpPath('extracted')),
 				[ 'a.txt', 'one' ]
@@ -59,10 +68,8 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 				await fs.readdir(tmpPath('extracted', 'one', 'two')),
 				[ 'c.txt' ]
 			)
-		} catch (error) {
-			console.log(error)
-			t.fail(error.message)
-		}
+		})
+
 		await fs.remove(tmp)
 	})
 

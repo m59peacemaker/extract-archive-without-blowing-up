@@ -72,7 +72,7 @@ const extractArchive = async (
 	if (removeArchive) {
 		await fs.promises.unlink(inputPath)
 	}
-	return Promise.all(files)
+	return { files: await Promise.all(files) }
 }
 
 module.exports = ({
