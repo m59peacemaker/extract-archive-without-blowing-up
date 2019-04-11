@@ -4,7 +4,7 @@
 const extractArchive = require('extract-archive-without-blowing-up')
 const { shouldExtractArchives, MB } = require('extract-archive-without-blowing-up/util')
 
-(async () => {
+;(async () => {
 	try {
 		await extractArchive({
 			inputPath: tmpPath('files.zip'),
