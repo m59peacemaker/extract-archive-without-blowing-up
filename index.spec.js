@@ -34,7 +34,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 		await fs.remove(tmp)
 	})
 
-	await test('', async () => {
+	await test('maintains directory structure', async t => {
 		await fs.outputFile(tmpPath('files', 'a.txt'), 'aaa')
 		await fs.outputFile(tmpPath('files', 'one', 'b.txt'), 'bbb')
 		await fs.outputFile(tmpPath('files', 'one', 'two', 'c.txt'), 'ccc')
@@ -45,30 +45,20 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 			outputPath: tmpPath('extracted')
 		})
 
-		await test('returns flat list of files', async t => {
-			files.forEach(file => t.equal(
-				Object.keys(file).sort(),
-				[ 'filePath', 'fileName' ].sort(),
-				JSON.stringify(file)
-			))
-		})
+		t.equal(
+			await fs.readdir(tmpPath('extracted')),
+			[ 'a.txt', 'one' ]
+		)
 
-		await test('maintains directory structure', async t => {
-			t.equal(
-				await fs.readdir(tmpPath('extracted')),
-				[ 'a.txt', 'one' ]
-			)
+		t.equal(
+			await fs.readdir(tmpPath('extracted', 'one')),
+			[ 'b.txt', 'two' ]
+		)
 
-			t.equal(
-				await fs.readdir(tmpPath('extracted', 'one')),
-				[ 'b.txt', 'two' ]
-			)
-
-			t.equal(
-				await fs.readdir(tmpPath('extracted', 'one', 'two')),
-				[ 'c.txt' ]
-			)
-		})
+		t.equal(
+			await fs.readdir(tmpPath('extracted', 'one', 'two')),
+			[ 'c.txt' ]
+		)
 
 		await fs.remove(tmp)
 	})
@@ -138,7 +128,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 			await seven.add(tmpPath('one/two.zip'), [ tmpPath('three') ])
 			await seven.add(tmpPath('nested.zip'), [ tmpPath('one') ])
 
-			await extractArchive({
+			const result = await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
 				shouldExtract: shouldExtractArchives
@@ -168,6 +158,30 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 				await fs.readdir(tmpPath('extracted', 'one', 'two', 'three', 'four', 'five'))
 				[ 'y.txt' ]
 			)
+
+			// awkwardly throwing these tests in here to share the setup code, for time's sake
+			await test('returns flat list of files at { files, extractedArchives }', async t => {
+				Object
+					.entries(result)
+					.map(([ resultProp, resultPropFiles ]) => {
+						resultPropFiles.forEach(file => {
+							t.equal(
+								Object.keys(file).sort(),
+								[ 'filePath', 'outputFilePath' ].sort(),
+								`${resultProp} item: ${JSON.stringify(file, null, 2)}`
+							)
+						})
+					})
+			})
+			await test('{ extractedArchives } is a list of extracted archives', async t => {
+				t.equal(
+					result.extractedArchives.map(({ filePath }) => filePath),
+					[
+						'/one/two.zip',
+						'/one/two/three/four/five.zip'
+					]
+				)
+			})
 		} catch (error) {
 			console.log(error)
 			t.fail(error.message)

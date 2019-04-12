@@ -7,29 +7,6 @@ const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
 
 const stripExtension = filePath => filePath.replace(/\.[^.$]+$/, '')
 
-const subExtractArchive = async (
-	{
-		fileName,
-		outputPath,
-		parentPath,
-		shouldExtract
-	},
-	state
-) => {
-	const inputPath = path.join(outputPath, fileName)
-	const dirName = stripExtension(fileName)
-	return extractArchive(
-		{
-			inputPath,
-			outputPath: path.join(outputPath, dirName),
-			shouldExtract,
-			removeArchive: true,
-			parentPath: path.join(parentPath, dirName)
-		},
-		state
-	)
-}
-
 const extractArchive = async (
 	{
 		inputPath,
@@ -54,17 +31,32 @@ const extractArchive = async (
 	}
 
 	const files = []
+	const extractedArchives = []
+	const subExtractions = []
 
 	const extraction = seven.extractFull(inputPath, outputPath)
 
-	extraction.process.on('data', async ({ file: fileName }) => {
-		const filePath = path.join(parentPath, fileName)
-		if (shouldExtract({ fileName, filePath })) {
-			files.push(
-				subExtractArchive({ fileName, outputPath, parentPath, shouldExtract }, state)
-			)
+	extraction.process.on('data', async ({ file: filePath7z }) => {
+		const filePath = path.join(parentPath, filePath7z)
+		const originalOutputFilePath = path.join(outputPath, filePath7z)
+		if (shouldExtract({ filePath })) {
+			const dirPath = stripExtension(filePath7z)
+			const outputFilePath = path.join(outputPath, dirPath)
+			subExtractions.push(extractArchive(
+				{
+					inputPath: originalOutputFilePath,
+					outputPath: outputFilePath,
+					shouldExtract,
+					removeArchive: true,
+					parentPath: path.join(parentPath, dirPath)
+				},
+				state
+			))
+			const file = { filePath, outputFilePath }
+			files.push(file)
+			extractedArchives.push(file)
 		} else {
-			files.push({ fileName, filePath: path.join(outputPath, fileName) })
+			files.push({ filePath, outputFilePath: originalOutputFilePath })
 		}
 	})
 
@@ -72,10 +64,14 @@ const extractArchive = async (
 	if (removeArchive) {
 		await fs.promises.unlink(inputPath)
 	}
-	return { files: await Promise.all(files) }
+	const subResults = await Promise.all(subExtractions)
+	return Object
+		.entries({ files, extractedArchives })
+		.map(([ k, v ]) => [ k, v.concat(...subResults.map(result => result[k])) ])
+		.reduce((acc, [ k, v ]) => Object.assign(acc, { [k]: v }), {})
 }
 
-module.exports = ({
+module.exports = async ({
 	inputPath,
 	outputPath,
 	shouldExtract = False,

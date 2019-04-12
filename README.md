@@ -21,9 +21,10 @@ const { shouldExtractArchives, MB } = require('extract-archive-without-blowing-u
 			outputPath: tmpPath('extracted'),
 			maximumOutputBytes: MB(25),
 			shouldExtract: shouldExtractArchives
+			// shouldExtract: ({ filePath }) => false
 		})
 
-		await Promise.all(files.map(({ filePath, fileName }) => {
+		await Promise.all(files.map(({ filePath, outputFilePath }) => {
 
 		}))
 	} catch (error) {
