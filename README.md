@@ -25,7 +25,7 @@ extractArchive.canExtract.mimetype('application/zip') // true
 		const { files } = await extractArchive({
 			inputPath: archivePath,
 			outputPath: '/tmp/extracted',
-			maximumOutputBytes: MB(25),
+			maximumOutputBytes: 1e+6 * 25, // 25MB
 			shouldExtract: extractArchive.shouldExtractArchives
 			// shouldExtract: ({ filePath }) => false
 		})
