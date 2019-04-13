@@ -25,9 +25,10 @@ extractArchive.canExtract.mimetype('application/zip') // true
 		const { files, extractedArchives } = await extractArchive({
 			inputPath: archivePath,
 			outputPath: '/tmp/extracted',
-			maximumOutputBytes: 1e+6 * 25, // 25MB
-			shouldExtract: extractArchive.shouldExtractArchives
-			// shouldExtract: ({ filePath }) => false
+			maximumOutputBytes: 1e+6 * 25, // 25MB, default Infinity
+			shouldExtract: extractArchive.shouldExtractArchives,
+			// shouldExtract: ({ filePath }) => false,
+			removeExtractedArchives: true // default false
 		})
 
 		await Promise.all(files.map(({ filePath, outputFilePath, type, isExtractedArchive }) => {

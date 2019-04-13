@@ -75,7 +75,7 @@ require('./canExtract.spec')
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
-				shouldExtract: () => false
+				shouldExtract: () => false,
 			})
 
 			t.equal(
@@ -91,7 +91,7 @@ require('./canExtract.spec')
 
 			t.equal(
 				await fs.readdir(tmpPath('extracted')),
-				[ 'sub', 'z.txt' ]
+				[ 'sub', 'sub.zip', 'z.txt' ]
 			)
 
 			t.equal(
@@ -279,7 +279,8 @@ require('./canExtract.spec')
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
-				shouldExtract: extractArchive.shouldExtractArchives
+				shouldExtract: extractArchive.shouldExtractArchives,
+				removeExtractedArchives: true
 			})
 
 			t.equal(
@@ -304,6 +305,7 @@ require('./canExtract.spec')
 					inputPath: tmpPath('nested.zip'),
 					outputPath: tmpPath('extracted'),
 					shouldExtract: extractArchive.shouldExtractArchives,
+					removeExtractedArchives: true,
 					maximumOutputBytes: MB(7)
 				})
 				t.fail('archive is too big, but did not throw')
