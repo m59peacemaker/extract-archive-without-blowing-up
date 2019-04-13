@@ -22,7 +22,7 @@ extractArchive.canExtract.mimetype('application/zip') // true
 
 ;(async () => {
 	try {
-		const { files } = await extractArchive({
+		const { files, extractedArchives } = await extractArchive({
 			inputPath: archivePath,
 			outputPath: '/tmp/extracted',
 			maximumOutputBytes: 1e+6 * 25, // 25MB
@@ -30,8 +30,14 @@ extractArchive.canExtract.mimetype('application/zip') // true
 			// shouldExtract: ({ filePath }) => false
 		})
 
-		await Promise.all(files.map(({ filePath, outputFilePath }) => {
+		await Promise.all(files.map(({ filePath, outputFilePath, type, isExtractedArchive }) => {
+			if (type === 'directory') {
+				if (isExtractedArchive) {
 
+				}
+			} else {
+				type // => 'file'
+			}
 		}))
 	} catch (error) {
 		if (error.code === extractArchive.ARCHIVE_TOO_LARGE) {

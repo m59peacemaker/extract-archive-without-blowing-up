@@ -162,22 +162,34 @@ require('./canExtract.spec')
 			)
 
 			// awkwardly throwing these tests in here to share the setup code, for time's sake
-			await test('returns flat list of files at { files, extractedArchives }', async t => {
-				Object
-					.entries(result)
-					.map(([ resultProp, resultPropFiles ]) => {
-						resultPropFiles.forEach(file => {
-							t.equal(
-								Object.keys(file).sort(),
-								[ 'filePath', 'outputFilePath' ].sort(),
-								`${resultProp} item: ${JSON.stringify(file, null, 2)}`
-							)
-						})
-					})
+			await test('returns flat list of files at { files }', async t => {
+				result.files.forEach(file => {
+					t.equal(
+						Object.keys(file).filter(key => key !== 'isExtractedArchive').sort(),
+						[ 'filePath', 'outputFilePath', 'type' ].sort(),
+						`file: ${JSON.stringify(file, null, 2)}`
+					)
+				})
 			})
-			await test('{ extractedArchives } is a list of extracted archives', async t => {
+			await test(`files are { type: 'directory' } when the output is a directory (is a directory or was an archive that is extracted), otherwise { type: 'file' }`, async t => {
 				t.equal(
-					result.extractedArchives.map(({ filePath }) => filePath),
+					result.files.map(({ filePath, type }) => ({ filePath, type })),
+					[
+						{ filePath: '/one', type: 'directory' },
+						{ filePath: '/one/two.zip', type: 'directory' },
+						{ filePath: '/one/two/three', type: 'directory' },
+						{ filePath: '/one/two/three/four', type: 'directory' },
+						{ filePath: '/one/two/three/four/five.zip', type: 'directory' },
+						{ filePath: '/one/two/three/four/five/y.txt', type: 'file' }
+					]
+				)
+			})
+			await test('extracted archives have { isExtractedArchive: true }', async t => {
+				t.equal(
+					result
+						.files
+						.filter(({ isExtractedArchive }) => isExtractedArchive)
+						.map(({ filePath }) => filePath),
 					[
 						'/one/two.zip',
 						'/one/two/three/four/five.zip'
