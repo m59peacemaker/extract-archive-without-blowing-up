@@ -6,10 +6,13 @@ const uuid = require('uuid-v4')
 const isArchive = require('is-archive')
 const seven = require('./7z')
 const extractArchive = require('./')
-const { MB, shouldExtractArchives } = require('./util')
+const KB = n => 1000 * n
+const MB = n => KB(1000) * n
 
 const tmp = path.join(os.tmpdir(), `bomb-squad-${uuid()}`)
 const tmpPath = (...args) => path.join(tmp, ...args)
+
+require('./canExtract.spec')
 
 ;(async () => {
 	await test('extracts inputPath to outputPath', async t => {
@@ -84,7 +87,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
-				shouldExtract: shouldExtractArchives
+				shouldExtract: extractArchive.shouldExtractArchives
 			})
 
 			t.equal(
@@ -131,7 +134,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 			const result = await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
-				shouldExtract: shouldExtractArchives
+				shouldExtract: extractArchive.shouldExtractArchives
 			})
 
 			await t.equal(
@@ -265,7 +268,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
 				outputPath: tmpPath('extracted'),
-				shouldExtract: shouldExtractArchives
+				shouldExtract: extractArchive.shouldExtractArchives
 			})
 
 			t.equal(
@@ -289,7 +292,7 @@ const tmpPath = (...args) => path.join(tmp, ...args)
 				const result = await extractArchive({
 					inputPath: tmpPath('nested.zip'),
 					outputPath: tmpPath('extracted'),
-				shouldExtract: shouldExtractArchives,
+					shouldExtract: extractArchive.shouldExtractArchives,
 					maximumOutputBytes: MB(7)
 				})
 				t.fail('archive is too big, but did not throw')

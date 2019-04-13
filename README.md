@@ -4,23 +4,29 @@ It is good to check the size of an archive's contents before extracting them so 
 
 **tl;dr** Extract archives (optionally recursive) and don't WRECK-SAUCE your RAM or get zip-bombed.
 
-## supported types
+## supported formats
 
-7z, XZ, BZIP2, GZIP, TAR, ZIP, WIM, AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, UDF, UEFI, VDI, VHD, VMDK, WIM, XAR, Z
+```
+7z, XZ, BZIP2, GZIP, TAR, ZIP, AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, UDF, UEFI, VDI, VHD, VMDK, WIM, XAR, Z
+```
 
 ## example
 
 ```js
 const extractArchive = require('extract-archive-without-blowing-up')
-const { shouldExtractArchives, MB } = require('extract-archive-without-blowing-up/util')
+
+const archivePath = '/tmp/files.zip'
+
+extractArchive.canExtract.extension(path.extname(archivePath)) // true
+extractArchive.canExtract.mimetype('application/zip') // true
 
 ;(async () => {
 	try {
 		const { files } = await extractArchive({
-			inputPath: tmpPath('files.zip'),
-			outputPath: tmpPath('extracted'),
+			inputPath: archivePath,
+			outputPath: '/tmp/extracted',
 			maximumOutputBytes: MB(25),
-			shouldExtract: shouldExtractArchives
+			shouldExtract: extractArchive.shouldExtractArchives
 			// shouldExtract: ({ filePath }) => false
 		})
 

@@ -2,6 +2,8 @@ const path = require('path')
 const fs = require('fs')
 const seven = require('./7z')
 const False = () => false
+const canExtract = require('./canExtract')
+const shouldExtractArchives = ({ filePath }) => canExtract.extension(path.extname(filePath))
 
 const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
 
@@ -89,5 +91,7 @@ module.exports = async ({
 )
 
 Object.assign(module.exports, {
+	canExtract,
+	shouldExtractArchives,
 	ARCHIVE_TOO_LARGE
 })

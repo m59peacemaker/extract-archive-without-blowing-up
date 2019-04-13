@@ -1,0 +1,187 @@
+[
+	{
+		"label": "7z",
+		"mimetypes": [ "application/x-7z-compressed" ],
+		"extensions": [ "7z" ]
+	},
+	{
+		"label": "XZ",
+		"mimetypes": [ "application/x-xz" ],
+		"extensions": [ "xz" ]
+	},
+	{
+		"label": "BZIP2",
+		"mimetypes": [ "application/x-bzip2" ],
+		"extensions": [ "bz2" ]
+	},
+	{
+		"label": "GZIP",
+		"mimetypes": [ "application/gzip" ],
+		"extensions": [ "gz", "z" ]
+	},
+	{
+		"label": "TAR",
+		"mimetypes": [ "application/x-tar" ],
+		"extensions": [ "tar" ]
+	},
+	{
+		"label": "ZIP",
+		"mimetypes": [ "application/zip", " application/x-zip" , "application/x-zip-compressed", "multipart/x-zip" ],
+		"extensions": [ "zip", "zipx" ]
+	},
+	{
+		"label": "AR",
+		"mimetypes": [ "application/x-archive" ],
+		"extensions": [ "a", "lib", "ar" ]
+	},
+	{
+		"label": "ARJ",
+		"mimetypes": [ "application/arj", "application/x-arj" ],
+		"extensions": [ "arj" ]
+	},
+	{
+		"label": "CAB",
+		"mimetypes": [ "application/vnd.ms-cab-compressed" ],
+		"extensions": [ "cab" ]
+	},
+	{
+		"label": "CHM",
+		"mimetypes": [ "application/vnd.ms-htmlhelp" ],
+		"extensions": [ "chm" ]
+	},
+	{
+		"label": "CPIO",
+		"mimetypes": [ "application/x-cpio" ],
+		"extensions": [ "cpio" ]
+	},
+	{
+		"label": "CramFS",
+		"mimetypes": [],
+		"extensions": [ "cramfs" ]
+	},
+	{
+		"label": "DMG",
+		"mimetypes": [ "application/x-apple-diskimage" ],
+		"extensions": [ "dmg", "smi", "img" ]
+	},
+	{
+		"label": "EXT",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "FAT",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "GPT",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "HFS",
+		"mimetypes": [],
+		"extensions": [ "hfs" ]
+	},
+	{
+		"label": "IHEX",
+		"mimetypes": [],
+		"extensions": [ "hex", "ihex", "a43" ]
+	},
+	{
+		"label": "ISO",
+		"mimetypes": [ "application/x-iso9660-image" ],
+		"extensions": [ "iso" ]
+	},
+	{
+		"label": "LZH",
+		"mimetypes": [ "application/x-lzh-compressed" ],
+		"extensions": [ "lzh", "lha" ]
+	},
+	{
+		"label": "LZMA",
+		"mimetypes": [ "`application/x-lzma" ],
+		"extensions": [ "lzma" ]
+	},
+	{
+		"label": "MBR",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "MSI",
+		"mimetypes": [ "application/x-ole-storage" ],
+		"extensions": [ "msi", "msp" ]
+	},
+	{
+		"label": "NSIS",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "NTFS",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "QCOW2",
+		"mimetypes": [],
+		"extensions": [ "qcow2" ]
+	},
+	{
+		"label": "RAR",
+		"mimetypes": [ "application/vnd.rar", "application/x-rar-compressed" ],
+		"extensions": [ "rar", "rev", "r00", "r01" ]
+	},
+	{
+		"label": "RPM",
+		"mimetypes": [ "application/x-redhat-package-manager" ],
+		"extensions": [ "rpm" ]
+	},
+	{
+		"label": "SquashFS",
+		"mimetypes": [],
+		"extensions": [ "sqfs" ]
+	},
+	{
+		"label": "UDF",
+		"mimetypes": [],
+		"extensions": [ "udf" ]
+	},
+	{
+		"label": "UEFI",
+		"mimetypes": [],
+		"extensions": []
+	},
+	{
+		"label": "VDI",
+		"mimetypes": [ "application/x-virtualbox-vdi" ],
+		"extensions": [ "vdi" ]
+	},
+	{
+		"label": "VHD",
+		"mimetypes": [ "application/x-vhd" ],
+		"extensions": [ "vhd", "vhdx" ]
+	},
+	{
+		"label": "VMDK",
+		"mimetypes": [ "application/x-vmdk" ],
+		"extensions": [ "vmdk" ]
+	},
+	{
+		"label": "WIM",
+		"mimetypes": [ "application/x-ms-wim" ],
+		"extensions": [ "wim", "swm", "esd" ]
+	},
+	{
+		"label": "XAR",
+		"mimetypes": [ "application/x-xar" ],
+		"extensions": [ "xar", "pkg", "xip" ]
+	},
+	{
+		"label": "Z",
+		"mimetypes": [],
+		"extensions": [ "Z" ]
+	}
+]
