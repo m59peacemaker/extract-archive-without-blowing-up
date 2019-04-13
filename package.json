@@ -31,7 +31,6 @@
 	},
 	"devDependencies": {
 		"fs-extra": "^7.0.1",
-		"is-archive": "^1.0.1",
 		"uuid-v4": "^0.1.0",
 		"zora": "^3.0.1"
 	}

@@ -3,7 +3,6 @@ const os = require('os')
 const fs = require('fs-extra')
 const path = require('path')
 const uuid = require('uuid-v4')
-const isArchive = require('is-archive')
 const seven = require('./7z')
 const extractArchive = require('./')
 const KB = n => 1000 * n
