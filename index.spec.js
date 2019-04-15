@@ -18,7 +18,7 @@ const reset = async () => {
 require('./canExtract.spec')
 
 ;(async () => {
-	await test('extracts inputPath to outputPath', async t => {
+	await test('extracts inputPath to result of getOutputPath', async t => {
 		try {
 			await fs.outputFile(tmpPath('files', 'foo.txt'), 'some foo text')
 			await seven.add(tmpPath('files.zip'), tmpPath('files/*'))
