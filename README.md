@@ -22,22 +22,27 @@ extractArchive.canExtract.mimetype('application/zip') // true
 
 ;(async () => {
 	try {
-		const { files, extractedArchives } = await extractArchive({
+		const { files } = await extractArchive({
 			inputPath: archivePath,
-			outputPath: '/tmp/extracted',
+			getOutputPath: extractArchive.maintainStructure('/tmp/extracted'),
 			maximumOutputBytes: 1e+6 * 25, // 25MB, default Infinity
 			shouldExtract: extractArchive.shouldExtractArchives,
-			// shouldExtract: ({ filePath }) => false,
 			removeExtractedArchives: true // default false
 		})
 
-		await Promise.all(files.map(({ filePath, outputFilePath, type, isExtractedArchive }) => {
-			if (type === 'directory') {
+		await Promise.all(files.map(({
+			rootFilePath,
+			localFilePath,
+			outputFilePath,
+			outputType,
+			isExtractedArchive
+		}) => {
+			if (outputType === 'directory') {
 				if (isExtractedArchive) {
 
 				}
 			} else {
-				type // => 'file'
+				outputType // => 'file'
 			}
 		}))
 	} catch (error) {

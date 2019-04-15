@@ -1,31 +1,45 @@
 const path = require('path')
 const fs = require('fs')
 const seven = require('./7z')
+const True = () => true
 const False = () => false
-const canExtract = require('./canExtract')
-const shouldExtractArchives = ({ filePath }) => canExtract.extension(path.extname(filePath))
 
+const canExtract = require('./canExtract')
+
+const ROOT_ARCHIVE_FILEPATH = ''
 const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
 
 const stripExtension = filePath => filePath.replace(/\.[^.$]+$/, '')
+
+const shouldExtractArchives = ({ localFilePath }) =>
+	canExtract.extension(path.extname(localFilePath))
+
+const maintainStructure = (rootOutputPath) => ({ rootFilePath, localFilePath, outputFilePath }) =>
+	rootFilePath === ROOT_ARCHIVE_FILEPATH ? rootOutputPath : stripExtension(outputFilePath)
 
 const archiveFilesSize = files => files.reduce((total, { size }) => total + size, 0)
 
 const archiveFileIsDirectory = ({ attributes }) => attributes.slice(0, 1) === 'D'
 
+const getOutputPathDefault = () => {
+	throw new Error('getOutputPath function is required')
+}
+
 module.exports = async ({
 	inputPath,
-	outputPath,
+	getOutputPath = getOutputPathDefault,
 	shouldExtract = False,
 	removeExtractedArchives = false,
 	maximumOutputBytes = Infinity
 }) => {
 	let remainingOutputBytes = maximumOutputBytes
 
+	// "root" refers to the top level archive
+	// "local" refers to an archive as though it is root, disregarding whether it was nested
 	const extractArchive = async ({
 		inputPath,
 		outputPath,
-		parentPath,
+		rootParentPath,
 		removeArchive
 	}) => {
 		const archiveContents = await seven.list(inputPath)
@@ -45,32 +59,50 @@ module.exports = async ({
 			.files
 			.filter(archiveFileIsDirectory)
 			.map(({ file }) => file)
+		const isDirectory = ({ localFilePath7z }) => archiveDirectoryPaths7z.includes(localFilePath7z)
 
 		const files = []
 		const subExtractions = []
 
 		const extraction = seven.extractFull(inputPath, outputPath)
 
-		extraction.process.on('data', async ({ file: filePath7z }) => {
-			const filePath = path.join(parentPath, filePath7z)
-			const originalOutputFilePath = path.join(outputPath, filePath7z)
-			const isDirectory = archiveDirectoryPaths7z.includes(filePath7z)
-			if (isDirectory) {
-				files.push({ filePath, outputFilePath: originalOutputFilePath, type: 'directory' })
-			} else if (shouldExtract({ filePath })) {
-				const dirPath = stripExtension(filePath7z)
-				const outputFilePath = path.join(outputPath, dirPath)
-				subExtractions.push(extractArchive({
-					inputPath: originalOutputFilePath,
-					outputPath: outputFilePath,
-					removeArchive: removeExtractedArchives,
-					parentPath: path.join(parentPath, dirPath)
+		extraction.process.on('data', async ({ file: localFilePath7z }) => {
+			// localFilePath is the path to this file from the archive it is in /three/a.txt
+			const localFilePath = `/${localFilePath7z}`
+			// rootFilePath is the path to this file from the root archive /one/two.zip/three/a.txt
+			const rootFilePath = path.join(rootParentPath, localFilePath)
+			const outputFilePath = path.join(outputPath, localFilePath)
+			const { file, subExtraction } = [
+				{
+					condition: isDirectory,
+					result: () => ({ file: { outputType: 'directory' } })
+				},
+				{
+					condition: shouldExtract,
+					result: () => ({
+						file: { outputType: 'directory', isExtractedArchive: true },
+						subExtraction: extractArchive({
+							inputPath: outputFilePath,
+							outputPath: getOutputPath({ localFilePath, rootFilePath, outputFilePath }),
+							removeArchive: removeExtractedArchives,
+							rootParentPath: rootFilePath
+						})
+					})
+				},
+				{
+					condition: True,
+					result: () => ({ file: { outputType: 'file' } })
+				}
+			]
+				.find(({ condition }) => condition({
+					localFilePath7z,
+					localFilePath,
+					rootFilePath,
+					outputFilePath
 				}))
-				const file = { filePath, outputFilePath, type: 'directory', isExtractedArchive: true }
-				files.push(file)
-			} else {
-				files.push({ filePath, outputFilePath: originalOutputFilePath, type: 'file' })
-			}
+				.result()
+			files.push({ ...file, rootFilePath, localFilePath, outputFilePath })
+			subExtraction && subExtractions.push(subExtraction)
 		})
 
 		await extraction
@@ -85,10 +117,15 @@ module.exports = async ({
 
 	}
 
+	const rootFilePath = ROOT_ARCHIVE_FILEPATH
 	return extractArchive({
 		inputPath,
-		outputPath,
-		parentPath: '/',
+		outputPath: getOutputPath({
+			rootFilePath,
+			localFilePath: rootFilePath,
+			outputFilePath: inputPath
+		}),
+		rootParentPath: '/',
 		removeArchive: false
 	})
 }
@@ -96,5 +133,7 @@ module.exports = async ({
 Object.assign(module.exports, {
 	canExtract,
 	shouldExtractArchives,
+	maintainStructure,
+	ROOT_ARCHIVE_FILEPATH,
 	ARCHIVE_TOO_LARGE
 })

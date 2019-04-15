@@ -11,6 +11,10 @@ const MB = n => KB(1000) * n
 const tmp = path.join(os.tmpdir(), `bomb-squad-${uuid()}`)
 const tmpPath = (...args) => path.join(tmp, ...args)
 
+const reset = async () => {
+	await fs.remove(tmp)
+}
+
 require('./canExtract.spec')
 
 ;(async () => {
@@ -21,7 +25,7 @@ require('./canExtract.spec')
 
 			await extractArchive({
 				inputPath: tmpPath('files.zip'),
-				outputPath: tmpPath('extracted')
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
 			})
 
 			t.equal(
@@ -33,10 +37,10 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 
-	await test('maintains directory structure', async t => {
+	await test('can mantain directory structure', async t => {
 		await fs.outputFile(tmpPath('files', 'a.txt'), 'aaa')
 		await fs.outputFile(tmpPath('files', 'one', 'b.txt'), 'bbb')
 		await fs.outputFile(tmpPath('files', 'one', 'two', 'c.txt'), 'ccc')
@@ -44,7 +48,7 @@ require('./canExtract.spec')
 
 		const { files } = await extractArchive({
 			inputPath: tmpPath('files.zip'),
-			outputPath: tmpPath('extracted')
+			getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
 		})
 
 		t.equal(
@@ -62,7 +66,7 @@ require('./canExtract.spec')
 			[ 'c.txt' ]
 		)
 
-		await fs.remove(tmp)
+		await reset()
 	})
 
 	await test('rocks this biz recursive', async t => {
@@ -74,7 +78,7 @@ require('./canExtract.spec')
 
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
-				outputPath: tmpPath('extracted'),
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: () => false,
 			})
 
@@ -85,7 +89,7 @@ require('./canExtract.spec')
 
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
-				outputPath: tmpPath('extracted'),
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives
 			})
 
@@ -111,7 +115,7 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 
 	await test('recurses archives in directories', async t => {
@@ -132,7 +136,7 @@ require('./canExtract.spec')
 
 			const result = await extractArchive({
 				inputPath: tmpPath('nested.zip'),
-				outputPath: tmpPath('extracted'),
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives
 			})
 
@@ -166,33 +170,33 @@ require('./canExtract.spec')
 				result.files.forEach(file => {
 					t.equal(
 						Object.keys(file).filter(key => key !== 'isExtractedArchive').sort(),
-						[ 'filePath', 'outputFilePath', 'type' ].sort(),
+						[ 'rootFilePath', 'localFilePath', 'outputFilePath', 'outputType' ].sort(),
 						`file: ${JSON.stringify(file, null, 2)}`
 					)
 				})
 			})
-			await test(`files are { type: 'directory' } when the output is a directory (is a directory or was an archive that is extracted), otherwise { type: 'file' }`, async t => {
-				t.equal(
-					result.files.map(({ filePath, type }) => ({ filePath, type })),
-					[
-						{ filePath: '/one', type: 'directory' },
-						{ filePath: '/one/two.zip', type: 'directory' },
-						{ filePath: '/one/two/three', type: 'directory' },
-						{ filePath: '/one/two/three/four', type: 'directory' },
-						{ filePath: '/one/two/three/four/five.zip', type: 'directory' },
-						{ filePath: '/one/two/three/four/five/y.txt', type: 'file' }
-					]
-				)
+			await test(`files are { outputType: 'directory' } when the output is a directory (is a directory or was an archive that is extracted), otherwise { outputType: 'file' }`, async t => {
+				const expectedFiles = [
+					{ rootFilePath: '/one', outputType: 'directory' },
+					{ rootFilePath: '/one/two.zip', outputType: 'directory' },
+					{ rootFilePath: '/one/two.zip/three', outputType: 'directory' },
+					{ rootFilePath: '/one/two.zip/three/four', outputType: 'directory' },
+					{ rootFilePath: '/one/two.zip/three/four/five.zip', outputType: 'directory' },
+					{ rootFilePath: '/one/two.zip/three/four/five.zip/y.txt', outputType: 'file' }
+				]
+				result.files
+					.map(({ rootFilePath, outputType }) => ({ rootFilePath, outputType }))
+					.forEach((file, index) => t.equal(file, expectedFiles[index]))
 			})
 			await test('extracted archives have { isExtractedArchive: true }', async t => {
 				t.equal(
 					result
 						.files
 						.filter(({ isExtractedArchive }) => isExtractedArchive)
-						.map(({ filePath }) => filePath),
+						.map(({ rootFilePath }) => rootFilePath),
 					[
 						'/one/two.zip',
-						'/one/two/three/four/five.zip'
+						'/one/two.zip/three/four/five.zip'
 					]
 				)
 			})
@@ -200,7 +204,7 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 
 	await test('{ code: ARCHIVE_TOO_LARGE } is a thing', t => {
@@ -216,7 +220,7 @@ require('./canExtract.spec')
 
 			await extractArchive({
 				inputPath: tmpPath('gigantichive.zip'),
-				outputPath: tmpPath('extracted'),
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				maximumOutputBytes: MB(25)
 			})
 			t.ok('did not fail')
@@ -229,7 +233,7 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 
 	await test('throws error { code: ARCHIVE_TOO_LARGE } when non-recursive archive is larger than allowed', async t => {
@@ -240,7 +244,7 @@ require('./canExtract.spec')
 			try {
 				await extractArchive({
 					inputPath: tmpPath('gigantichive.zip'),
-					outputPath: tmpPath('extracted'),
+					getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 					maximumOutputBytes: MB(25)
 				})
 				t.fail('archive is too big, but did not throw')
@@ -251,7 +255,7 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 
 	await test('throws error { code: ARCHIVE_TOO_LARGE } when recursive archive is larger than allowed', async t => {
@@ -261,7 +265,10 @@ require('./canExtract.spec')
 			await fs.outputFile(tmpPath('b.txt'), filler)
 			await fs.outputFile(tmpPath('c.txt'), filler)
 			await fs.outputFile(tmpPath('d.txt'), filler)
-			await seven.add(tmpPath('two.zip'), tmpPath('d.txt'))
+			await seven.add(
+				tmpPath('two.zip'),
+				[ tmpPath('d.txt')
+			])
 			await seven.add(
 				tmpPath('one.zip'),
 				[ tmpPath('b.txt'), tmpPath('c.txt'), tmpPath('two.zip') ]
@@ -278,7 +285,7 @@ require('./canExtract.spec')
 			// sanity check
 			await extractArchive({
 				inputPath: tmpPath('nested.zip'),
-				outputPath: tmpPath('extracted'),
+				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives,
 				removeExtractedArchives: true
 			})
@@ -297,13 +304,13 @@ require('./canExtract.spec')
 			)
 			// we're sane
 
-			await fs.remove(tmp)
+			await reset()
 			await createArchive()
 
 			try {
 				const result = await extractArchive({
 					inputPath: tmpPath('nested.zip'),
-					outputPath: tmpPath('extracted'),
+					getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 					shouldExtract: extractArchive.shouldExtractArchives,
 					removeExtractedArchives: true,
 					maximumOutputBytes: MB(7)
@@ -324,6 +331,6 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
-		await fs.remove(tmp)
+		await reset()
 	})
 })()
