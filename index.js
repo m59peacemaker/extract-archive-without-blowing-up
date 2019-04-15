@@ -6,7 +6,7 @@ const False = () => false
 
 const canExtract = require('./canExtract')
 
-const ROOT_ARCHIVE_FILEPATH = ''
+const ROOT_ARCHIVE_FILEPATH = '.'
 const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
 
 const stripExtension = filePath => filePath.replace(/\.[^.$]+$/, '')
@@ -117,17 +117,26 @@ module.exports = async ({
 
 	}
 
-	const rootFilePath = ROOT_ARCHIVE_FILEPATH
-	return extractArchive({
+	const outputFilePath = getOutputPath({
+		localFilePath7z: ROOT_ARCHIVE_FILEPATH,
+		rootFilePath: ROOT_ARCHIVE_FILEPATH,
+		localFilePath: ROOT_ARCHIVE_FILEPATH,
+		outputFilePath: inputPath
+	})
+	const { files } = await extractArchive({
 		inputPath,
-		outputPath: getOutputPath({
-			rootFilePath,
-			localFilePath: rootFilePath,
-			outputFilePath: inputPath
-		}),
+		outputPath: outputFilePath,
 		rootParentPath: '/',
 		removeArchive: false
 	})
+	files.unshift({
+		outputType: 'directory',
+		isExtractedArchive: true,
+		rootFilePath: ROOT_ARCHIVE_FILEPATH,
+		localFilePath: ROOT_ARCHIVE_FILEPATH,
+		outputFilePath
+	})
+	return { files }
 }
 
 Object.assign(module.exports, {

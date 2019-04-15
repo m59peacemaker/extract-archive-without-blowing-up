@@ -177,6 +177,7 @@ require('./canExtract.spec')
 			})
 			await test(`files are { outputType: 'directory' } when the output is a directory (is a directory or was an archive that is extracted), otherwise { outputType: 'file' }`, async t => {
 				const expectedFiles = [
+					{ rootFilePath: '.', outputType: 'directory' },
 					{ rootFilePath: '/one', outputType: 'directory' },
 					{ rootFilePath: '/one/two.zip', outputType: 'directory' },
 					{ rootFilePath: '/one/two.zip/three', outputType: 'directory' },
@@ -195,6 +196,7 @@ require('./canExtract.spec')
 						.filter(({ isExtractedArchive }) => isExtractedArchive)
 						.map(({ rootFilePath }) => rootFilePath),
 					[
+						'.',
 						'/one/two.zip',
 						'/one/two.zip/three/four/five.zip'
 					]
