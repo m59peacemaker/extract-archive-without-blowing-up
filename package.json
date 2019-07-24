@@ -27,7 +27,7 @@
 	"license": "CC0-1.0",
 	"dependencies": {
 		"7zip-bin": "^4.1.0",
-		"node-7z": "git+https://github.com/m59peacemaker/node-7z.git#36d0694ceaf1a2edcb7cecbf63d949e941feaf6f"
+		"node-7z": "git+https://github.com/m59peacemaker/node-7z.git#497cfe47112810387633a317b1ef6cc63afec805"
 	},
 	"devDependencies": {
 		"fs-extra": "^7.0.1",
