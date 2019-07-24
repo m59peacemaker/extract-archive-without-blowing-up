@@ -3,7 +3,7 @@
 const path = require('path')
 const fs = require('fs-extra')
 const seven = require('../7z')
-const { MB, shouldExtractArchives } = require('../util')
+const { MB } = require('./util/bytes')
 
 const args = process.argv.slice(2)
 const [ ZIP_FILE, ZIP_MB ] = args

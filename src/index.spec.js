@@ -5,8 +5,7 @@ const path = require('path')
 const uuid = require('uuid-v4')
 const seven = require('./7z')
 const extractArchive = require('./')
-const KB = n => 1000 * n
-const MB = n => KB(1000) * n
+const { KB, MB } = require('./test/util/bytes')
 
 const tmp = path.join(os.tmpdir(), `bomb-squad-${uuid()}`)
 const tmpPath = (...args) => path.join(tmp, ...args)

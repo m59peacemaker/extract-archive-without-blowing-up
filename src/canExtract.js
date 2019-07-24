@@ -1,4 +1,4 @@
-const supportedFormats = require('./supportedFormats')
+const supportedFormats = require('../supportedFormats')
 
 const extensions = supportedFormats
 	.map(({ extensions }) => extensions)
