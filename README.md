@@ -17,13 +17,13 @@ const extractArchive = require('extract-archive-without-blowing-up')
 
 const archivePath = '/tmp/files.zip'
 
-extractArchive.canExtract.extension(path.extname(archivePath)) // true
-extractArchive.canExtract.mimetype('application/zip') // true
+extractArchive.supports.extension(path.extname(archivePath)) // true
+extractArchive.supports.mimetype('application/zip') // true
 
 ;(async () => {
 	try {
-		const { files } = await extractArchive({
-			inputPath: archivePath,
+		const { extractedFiles } = await extractArchive({
+			inputFilePath: archivePath,
 			getOutputPath: extractArchive.maintainStructure('/tmp/extracted'),
 			maximumOutputBytes: 1e+6 * 25, // 25MB, default Infinity
 			shouldExtract: extractArchive.shouldExtractArchives,
@@ -31,9 +31,9 @@ extractArchive.canExtract.mimetype('application/zip') // true
 		})
 
 		await Promise.all(files.map(({
-			rootFilePath,
-			localFilePath,
-			outputFilePath,
+			filePath,
+			filePathFromRootArchive,
+			filePathFromLocalArchive,
 			outputType,
 			isExtractedArchive
 		}) => {

@@ -5,25 +5,26 @@ const path = require('path')
 const uuid = require('uuid-v4')
 const seven = require('./7z')
 const extractArchive = require('./')
+const { ROOT_ARCHIVE_FILEPATH } = extractArchive
 const { KB, MB } = require('./test/util/bytes')
 
-const tmp = path.join(os.tmpdir(), `bomb-squad-${uuid()}`)
+const tmp = path.join(os.tmpdir(), `extract-archive-${uuid()}`)
 const tmpPath = (...args) => path.join(tmp, ...args)
 
 const reset = async () => {
 	await fs.remove(tmp)
 }
 
-require('./canExtract.spec')
+require('./supports.spec')
 
 ;(async () => {
-	await test('extracts inputPath to result of getOutputPath', async t => {
+	await test('extracts inputFilePath to result of getOutputPath', async t => {
 		try {
 			await fs.outputFile(tmpPath('files', 'foo.txt'), 'some foo text')
 			await seven.add(tmpPath('files.zip'), tmpPath('files/*'))
 
 			await extractArchive({
-				inputPath: tmpPath('files.zip'),
+				inputFilePath: tmpPath('files.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
 			})
 
@@ -45,8 +46,8 @@ require('./canExtract.spec')
 		await fs.outputFile(tmpPath('files', 'one', 'two', 'c.txt'), 'ccc')
 		await seven.add(tmpPath('files.zip'), tmpPath('files/*'))
 
-		const { files } = await extractArchive({
-			inputPath: tmpPath('files.zip'),
+		const { extractedFiles } = await extractArchive({
+			inputFilePath: tmpPath('files.zip'),
 			getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
 		})
 
@@ -76,7 +77,7 @@ require('./canExtract.spec')
 			await seven.add(tmpPath('nested.zip'), [ tmpPath('sub.zip'), tmpPath('z.txt') ])
 
 			await extractArchive({
-				inputPath: tmpPath('nested.zip'),
+				inputFilePath: tmpPath('nested.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: () => false,
 			})
@@ -87,7 +88,7 @@ require('./canExtract.spec')
 			)
 
 			await extractArchive({
-				inputPath: tmpPath('nested.zip'),
+				inputFilePath: tmpPath('nested.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives
 			})
@@ -134,7 +135,7 @@ require('./canExtract.spec')
 			await seven.add(tmpPath('nested.zip'), [ tmpPath('one') ])
 
 			const result = await extractArchive({
-				inputPath: tmpPath('nested.zip'),
+				inputFilePath: tmpPath('nested.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives
 			})
@@ -165,37 +166,37 @@ require('./canExtract.spec')
 			)
 
 			// awkwardly throwing these tests in here to share the setup code, for time's sake
-			await test('returns flat list of files at { files }', async t => {
-				result.files.forEach(file => {
+			await test('returns flat list of files at { extractedFiles }', async t => {
+				result.extractedFiles.forEach(file => {
 					t.equal(
 						Object.keys(file).filter(key => key !== 'isExtractedArchive').sort(),
-						[ 'rootFilePath', 'localFilePath', 'outputFilePath', 'outputType' ].sort(),
+						[ 'filePath', 'filePathFromRootArchive', 'filePathFromLocalArchive', 'outputType' ].sort(),
 						`file: ${JSON.stringify(file, null, 2)}`
 					)
 				})
 			})
 			await test(`files are { outputType: 'directory' } when the output is a directory (is a directory or was an archive that is extracted), otherwise { outputType: 'file' }`, async t => {
 				const expectedFiles = [
-					{ rootFilePath: '.', outputType: 'directory' },
-					{ rootFilePath: '/one', outputType: 'directory' },
-					{ rootFilePath: '/one/two.zip', outputType: 'directory' },
-					{ rootFilePath: '/one/two.zip/three', outputType: 'directory' },
-					{ rootFilePath: '/one/two.zip/three/four', outputType: 'directory' },
-					{ rootFilePath: '/one/two.zip/three/four/five.zip', outputType: 'directory' },
-					{ rootFilePath: '/one/two.zip/three/four/five.zip/y.txt', outputType: 'file' }
+					//{ filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH, outputType: 'directory' },
+					{ filePathFromRootArchive: '/one', outputType: 'directory' },
+					{ filePathFromRootArchive: '/one/two.zip', outputType: 'directory' },
+					{ filePathFromRootArchive: '/one/two.zip/three', outputType: 'directory' },
+					{ filePathFromRootArchive: '/one/two.zip/three/four', outputType: 'directory' },
+					{ filePathFromRootArchive: '/one/two.zip/three/four/five.zip', outputType: 'directory' },
+					{ filePathFromRootArchive: '/one/two.zip/three/four/five.zip/y.txt', outputType: 'file' }
 				]
-				result.files
-					.map(({ rootFilePath, outputType }) => ({ rootFilePath, outputType }))
+				result.extractedFiles
+					.map(({ filePathFromRootArchive, outputType }) => ({ filePathFromRootArchive, outputType }))
 					.forEach((file, index) => t.equal(file, expectedFiles[index]))
 			})
 			await test('extracted archives have { isExtractedArchive: true }', async t => {
 				t.equal(
 					result
-						.files
+						.extractedFiles
 						.filter(({ isExtractedArchive }) => isExtractedArchive)
-						.map(({ rootFilePath }) => rootFilePath),
+						.map(({ filePathFromRootArchive }) => filePathFromRootArchive),
 					[
-						'.',
+						//ROOT_ARCHIVE_FILEPATH,
 						'/one/two.zip',
 						'/one/two.zip/three/four/five.zip'
 					]
@@ -220,7 +221,7 @@ require('./canExtract.spec')
 			await seven.add(tmpPath('gigantichive.zip'), tmpPath('*'))
 
 			await extractArchive({
-				inputPath: tmpPath('gigantichive.zip'),
+				inputFilePath: tmpPath('gigantichive.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				maximumOutputBytes: MB(25)
 			})
@@ -244,7 +245,7 @@ require('./canExtract.spec')
 
 			try {
 				await extractArchive({
-					inputPath: tmpPath('gigantichive.zip'),
+					inputFilePath: tmpPath('gigantichive.zip'),
 					getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 					maximumOutputBytes: MB(25)
 				})
@@ -285,7 +286,7 @@ require('./canExtract.spec')
 
 			// sanity check
 			await extractArchive({
-				inputPath: tmpPath('nested.zip'),
+				inputFilePath: tmpPath('nested.zip'),
 				getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 				shouldExtract: extractArchive.shouldExtractArchives,
 				removeExtractedArchives: true
@@ -310,7 +311,7 @@ require('./canExtract.spec')
 
 			try {
 				const result = await extractArchive({
-					inputPath: tmpPath('nested.zip'),
+					inputFilePath: tmpPath('nested.zip'),
 					getOutputPath: extractArchive.maintainStructure(tmpPath('extracted')),
 					shouldExtract: extractArchive.shouldExtractArchives,
 					removeExtractedArchives: true,
@@ -332,6 +333,91 @@ require('./canExtract.spec')
 			console.log(error)
 			t.fail(error.message)
 		}
+		await reset()
+	})
+
+	await test(
+		'extracting all archives to the same directory without regard for consequences with getOutputPath',
+		async t => {
+			/*
+				nested.zip
+					bananaz.zip
+					x.txt
+					one
+						two.zip
+							x.txt
+							y.txt
+							three
+								four
+									five.zip
+										bananaz.zip
+										y.txt
+				bananaz.zip
+					z.txt
+			*/
+			await fs.outputFile(tmpPath('x.txt'), 'x')
+			await fs.outputFile(tmpPath('y.txt'), 'y')
+			await fs.outputFile(tmpPath('z.txt'), 'z')
+			await fs.outputFile(tmpPath('banana'), 'banana')
+			await seven.add(tmpPath('bananaz.zip'), [ tmpPath('banana'), tmpPath('z.txt') ])
+			await seven.add(tmpPath('three/four/five.zip'), [ tmpPath('bananaz.zip'), tmpPath('y.txt') ])
+			await seven.add(tmpPath('one/two.zip'), [ tmpPath('x.txt'), tmpPath('y.txt'), tmpPath('three') ])
+			await seven.add(tmpPath('nested.zip'), [ tmpPath('bananaz.zip'), tmpPath('x.txt'), tmpPath('one') ])
+
+			const result = await extractArchive({
+				inputFilePath: tmpPath('nested.zip'),
+				getOutputPath: ({ filePath }) => tmpPath('extracted'),
+				shouldExtract: extractArchive.shouldExtractArchives
+			})
+
+			await t.equal(
+				(await fs.readdir(tmpPath('extracted'))).sort(),
+				[ 'x.txt', 'y.txt', 'z.txt', 'banana', 'bananaz.zip', 'one', 'three' ].sort()
+			)
+
+			await reset()
+		}
+	)
+
+	await test('extracting all archives to their own directory as siblings with getOutputPath', async t => {
+		/*
+			nested.zip
+				one
+					two.zip
+						three
+							four
+								five.zip
+									y.txt
+		*/
+		await fs.outputFile(tmpPath('y.txt'), 'yyy')
+		await seven.add(tmpPath('three/four/five.zip'), [ tmpPath('y.txt') ])
+		await seven.add(tmpPath('one/two.zip'), [ tmpPath('three') ])
+		await seven.add(tmpPath('nested.zip'), [ tmpPath('one') ])
+
+		const result = await extractArchive({
+			inputFilePath: tmpPath('nested.zip'),
+			getOutputPath: ({ filePath }) =>
+				path.join(tmpPath('extracted'), path.basename(filePath, path.extname(filePath))),
+			shouldExtract: extractArchive.shouldExtractArchives
+		})
+
+		await t.equal(
+			(await fs.readdir(tmpPath('extracted'))).sort(),
+			[ 'nested', 'two', 'five' ].sort()
+		)
+		await t.equal(
+			await fs.readdir(path.join(tmpPath('extracted'), 'nested/one')),
+			[ 'two.zip' ]
+		)
+		await t.equal(
+			await fs.readdir(path.join(tmpPath('extracted'), 'two/three/four')),
+			[ 'five.zip' ]
+		)
+		await t.equal(
+			await fs.readdir(path.join(tmpPath('extracted'), 'five')),
+			[ 'y.txt' ]
+		)
+
 		await reset()
 	})
 })()
