@@ -1,4 +1,4 @@
-const bin7z = require('7zip-bin')
+const bin7z = require('../bin-7z')
 const Seven = require('node-7z')
 
 const isSrslyObject = v => !Array.isArray(v)

@@ -26,7 +26,6 @@
 	"author": "Johnny Hauser <johnnyhauser@gmail.com>",
 	"license": "CC0-1.0",
 	"dependencies": {
-		"7zip-bin": "^4.1.0",
 		"node-7z": "git+https://github.com/m59peacemaker/node-7z.git#497cfe47112810387633a317b1ef6cc63afec805"
 	},
 	"devDependencies": {
