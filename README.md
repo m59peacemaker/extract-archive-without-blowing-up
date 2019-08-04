@@ -4,6 +4,11 @@ It is good to check the size of an archive's contents before extracting them so 
 
 **tl;dr** Extract archives (optionally recursive) and don't WRECK-SAUCE your RAM or get zip-bombed.
 
+## TODO
+
+- It would be nice for the exodus bundled 7z binary to live elsewhere and be an npm dependency of this package. The exodus bundle here should then be cleaned out of the git history.
+- if node-7z stops relying on a polyfill, it can replace the fork that is currently used
+
 ## supported formats
 
 ```
