@@ -70,13 +70,21 @@ module.exports = async ({
 		const subExtractions = []
 
 		const extraction = seven.extractFull(inputFilePath, outputPath)
-
-		extraction.process.on('data', async ({ file: filePathFromLocalArchive7z }) => {
+		
+		const onFile = async ({ file: filePathFromLocalArchive7z }) => {
 			// filePathFromLocalArchive is the path to this file from the archive it is in /three/a.txt
 			const filePathFromLocalArchive = `/${filePathFromLocalArchive7z}`
 			// filePathFromRootArchive is the path to this file from the root archive /one/two.zip/three/a.txt
 			const filePathFromRootArchive = path.join(rootParentPath, filePathFromLocalArchive)
 			const filePath = path.join(outputPath, filePathFromLocalArchive)
+
+			// this is to handle directories that don't show up in the archive files list
+			const dirname = path.dirname(filePathFromLocalArchive7z)
+			if (dirname !== '.' && !archiveDirectoryPaths7z.includes(dirname)) {
+				archiveDirectoryPaths7z.push(dirname)
+				onFile({ file: dirname })
+			}
+
 			const { file, subExtraction } = [
 				{
 					condition: isDirectory,
@@ -108,7 +116,9 @@ module.exports = async ({
 				.result()
 			extractedFiles.push({ ...file, filePath, filePathFromRootArchive, filePathFromLocalArchive })
 			subExtraction && subExtractions.push(subExtraction)
-		})
+		}
+
+		extraction.process.on('data', onFile)
 
 		await extraction
 		if (removeArchive) {

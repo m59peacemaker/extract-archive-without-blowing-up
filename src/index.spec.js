@@ -420,4 +420,30 @@ require('./supports.spec')
 
 		await reset()
 	})
+
+	await test(
+		`lists directories in { extractedFiles } when the archive doesn't explicitly list them`,
+		async t => {
+			const { extractedFiles } = await extractArchive({
+				inputFilePath: `${__dirname}/../samples/unlisted-directory.zip`,
+				getOutputPath: ({ filePath }) => tmpPath('extracted'),
+				shouldExtract: extractArchive.shouldExtractArchives
+			})
+			t.deepEqual(
+				extractedFiles.map(({ filePath, ...file }) => file),
+				[
+					{
+						outputType: 'directory',
+						filePathFromRootArchive: '/one',
+						filePathFromLocalArchive: '/one'
+					},
+					{
+						outputType: 'file',
+						filePathFromRootArchive: '/one/foo.txt',
+						filePathFromLocalArchive: '/one/foo.txt'
+					}
+				]
+			)
+		}
+	)
 })()
