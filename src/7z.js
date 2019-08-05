@@ -2,8 +2,8 @@ const bin7z = require('.bin/7z')
 const Seven = require('node-7z')
 
 const isSrslyObject = v => !Array.isArray(v)
-  && v != null
-  && Object.prototype.toString.call(v) === '[object Object]'
+	&& v != null
+	&& Object.prototype.toString.call(v) === '[object Object]'
 
 const jsMapToJsObj = map => Array
 	.from(map)
@@ -38,4 +38,4 @@ const createSeven = ({ bin }) => Object
 	})
 	.reduce((acc, [ k, v ]) => ({ ...acc, [k]: v }), {})
 
-module.exports = createSeven({ bin: bin7z.path7za })
+module.exports = createSeven({ bin: bin7z })
