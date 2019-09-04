@@ -9,7 +9,7 @@ const jsMapToJsObj = map => Array
 	.from(map)
 	.reduce((obj, [ k, v ]) => Object.assign(obj, { [k]: v }), {})
 
-const createSeven = ({ bin }) => Object
+module.exports = ({ bin }) => Object
 	.entries(Seven)
 	.map(([ name, fn ]) => {
 		return [
@@ -37,5 +37,3 @@ const createSeven = ({ bin }) => Object
 		]
 	})
 	.reduce((acc, [ k, v ]) => ({ ...acc, [k]: v }), {})
-
-module.exports = createSeven({ bin: bin7z })

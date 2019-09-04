@@ -3,10 +3,12 @@ const os = require('os')
 const fs = require('fs-extra')
 const path = require('path')
 const uuid = require('uuid-v4')
-const seven = require('./7z')
+const seven = require('./archiveLibs/7z')({ bin: require('.bin/7z') })
 const extractArchive = require('./')
 const { ROOT_ARCHIVE_FILEPATH } = extractArchive
 const { KB, MB } = require('./test/util/bytes')
+const sortBy = require('@ramda/sortby')
+const sortByFilePathFromRootArchive = sortBy(({ filePathFromRootArchive }) => filePathFromRootArchive)
 
 const tmp = path.join(os.tmpdir(), `extract-archive-${uuid()}`)
 const tmpPath = (...args) => path.join(tmp, ...args)
@@ -444,6 +446,66 @@ require('./supports.spec')
 					}
 				]
 			)
+			await reset()
+		}
+	)
+
+	await test(
+		`recursively extracts multiple archive types`,
+		async t => {
+			const { extractedFiles } = await extractArchive({
+				inputFilePath: `${__dirname}/../samples/multiple-archive-and-file-types-nested.7z`,
+				getOutputPath: ({ filePath }) => tmpPath('extracted'),
+				shouldExtract: extractArchive.shouldExtractArchives
+			})
+			t.deepEqual(
+				sortByFilePathFromRootArchive(extractedFiles.map(({ filePath, ...file }) => file)),
+				sortByFilePathFromRootArchive([
+					{
+						outputType: "directory",
+						filePathFromRootArchive: "/one",
+						filePathFromLocalArchive: "/one"
+					},
+					{
+						outputType: "file",
+						filePathFromRootArchive: "/one/bullet.gbr",
+						filePathFromLocalArchive: "/one/bullet.gbr"
+					},
+					{
+						outputType: "directory",
+						isExtractedArchive: true,
+						filePathFromRootArchive: "/one/two.rar",
+						filePathFromLocalArchive: "/one/two.rar"
+					},
+					{
+						outputType: "directory",
+						filePathFromRootArchive: "/one/two.rar/three",
+						filePathFromLocalArchive: "/three"
+					},
+					{
+						outputType: "file",
+						filePathFromRootArchive: "/one/two.rar/three/image.png",
+						filePathFromLocalArchive: "/three/image.png"
+					},
+					{
+						outputType: "directory",
+						filePathFromRootArchive: "/one/two.rar/three/four",
+						filePathFromLocalArchive: "/three/four"
+					},
+					{
+						outputType: "directory",
+						isExtractedArchive: true,
+						filePathFromRootArchive: "/one/two.rar/three/four/five.zip",
+						filePathFromLocalArchive: "/three/four/five.zip"
+					},
+					{
+						outputType: "file",
+						filePathFromRootArchive: "/one/two.rar/three/four/five.zip/foo.txt",
+						filePathFromLocalArchive: "/foo.txt"
+					}
+				])
+			)
+			await reset()
 		}
 	)
 })()

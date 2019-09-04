@@ -1,15 +1,14 @@
 const path = require('path')
 const fs = require('fs')
-const seven = require('./7z')
-const True = () => true
-const False = () => false
-
+const archiveLibs = require('./archiveLibs')
 const supports = require('./supports')
 
 const ROOT_ARCHIVE_FILEPATH = '/'
 const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
 
 const stripExtension = filePath => filePath.replace(/\.[^.$]+$/, '')
+const True = () => true
+const False = () => false
 
 const shouldExtractArchives = ({ filePathFromRootArchive }) =>
 	supports.extension(path.extname(filePathFromRootArchive))
@@ -23,8 +22,6 @@ const maintainStructure = (rootOutputPath) => ({
 }
 
 const archiveFilesSize = files => files.reduce((total, { size }) => total + size, 0)
-
-const archiveFileIsDirectory = ({ attributes }) => attributes.slice(0, 1) === 'D'
 
 const getOutputPathDefault = () => {
 	throw new Error('getOutputPath function is required')
@@ -47,11 +44,12 @@ module.exports = async ({
 		rootParentPath,
 		removeArchive
 	}) => {
-		const archiveContents = await seven.list(inputFilePath)
+		const archiveLib = archiveLibs[path.extname(inputFilePath) === '.rar' ? 'unrar' : 'seven']
+		const { contents: archiveContents } = await archiveLib.list(inputFilePath)
 
 		remainingOutputBytes = remainingOutputBytes === Infinity
 			? Infinity
-			: remainingOutputBytes - archiveFilesSize(archiveContents.files)
+			: remainingOutputBytes - archiveFilesSize(archiveContents)
 			
 		if (remainingOutputBytes <= 0) {
 			throw Object.assign(
@@ -61,16 +59,13 @@ module.exports = async ({
 		}
 
 		const archiveDirectoryPaths7z = archiveContents
-			.files
-			.filter(archiveFileIsDirectory)
-			.map(({ file }) => file)
+			.filter(({ type }) => type === 'directory')
+			.map(({ path }) => path)
 		const isDirectory = ({ filePathFromLocalArchive7z }) => archiveDirectoryPaths7z.includes(filePathFromLocalArchive7z)
 
 		const extractedFiles = []
 		const subExtractions = []
 
-		const extraction = seven.extractFull(inputFilePath, outputPath)
-		
 		const onFile = async ({ file: filePathFromLocalArchive7z }) => {
 			// filePathFromLocalArchive is the path to this file from the archive it is in /three/a.txt
 			const filePathFromLocalArchive = `/${filePathFromLocalArchive7z}`
@@ -83,6 +78,13 @@ module.exports = async ({
 			if (dirname !== '.' && !archiveDirectoryPaths7z.includes(dirname)) {
 				archiveDirectoryPaths7z.push(dirname)
 				onFile({ file: dirname })
+			}
+
+			const filePathData = {
+				filePathFromLocalArchive7z,
+				filePathFromLocalArchive,
+				filePathFromRootArchive,
+				filePath
 			}
 
 			const { file, subExtraction } = [
@@ -107,20 +109,14 @@ module.exports = async ({
 					result: () => ({ file: { outputType: 'file' } })
 				}
 			]
-				.find(({ condition }) => condition({
-					filePathFromLocalArchive7z,
-					filePathFromLocalArchive,
-					filePathFromRootArchive,
-					filePath
-				}))
+				.find(({ condition }) => condition(filePathData))
 				.result()
 			extractedFiles.push({ ...file, filePath, filePathFromRootArchive, filePathFromLocalArchive })
 			subExtraction && subExtractions.push(subExtraction)
 		}
 
-		extraction.process.on('data', onFile)
+		await archiveLib.extract({ inputFilePath, outputPath, onFile })
 
-		await extraction
 		if (removeArchive) {
 			await fs.promises.unlink(inputFilePath)
 		}
@@ -129,7 +125,6 @@ module.exports = async ({
 			.entries({ extractedFiles })
 			.map(([ k, v ]) => [ k, v.concat(...subResults.map(result => result[k])) ])
 			.reduce((acc, [ k, v ]) => Object.assign(acc, { [k]: v }), {})
-
 	}
 
 	const outputPath = getOutputPath({
