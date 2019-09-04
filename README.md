@@ -1,12 +1,12 @@
 # extract-archive-without-blowing-up
 
-It is good to check the size of an archive's contents before extracting them so that you don't fill up your drive / get zip-bombed. This module uses `7z` to extract archives and can recursively extract nested archives, with a parameter to restrict the output size. 7z seems to do well about loading only a minimal amount of data into memory at a time.
+It is good to check the size of an archive's contents before extracting them so that you don't fill up your drive / get zip-bombed. This module uses `7z` and `unrar` to extract archives and can recursively extract nested archives, with a parameter to restrict the output size. The underlying binaries should be reasonable about RAM usage.
 
-**tl;dr** Extract archives (optionally recursive) and don't WRECK-SAUCE your RAM or get zip-bombed.
+**tl;dr** Extract archives (optionally recursive) without using up all of your RAM or getting zip-bombed.
 
 ## TODO
 
-- It would be nice for the exodus bundled 7z binary to live elsewhere and be an npm dependency of this package. The exodus bundle here should then be cleaned out of the git history.
+- It would be nice for the exodus bundled binaries to live elsewhere and be an npm dependency of this package. The exodus bundles here should then be cleaned out of the git history.
 - if node-7z stops relying on a polyfill, it can replace the fork that is currently used
 
 ## supported formats
