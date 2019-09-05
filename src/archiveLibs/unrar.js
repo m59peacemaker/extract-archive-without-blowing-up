@@ -28,10 +28,13 @@ module.exports = ({ bin }) => {
 					return
 				}
 				const [ action, outputPath ] = line.split(/\s+/)
-				onEntry({
-					type: extractionActionSubject[action],
-					outputPath
-				})
+				// this check is necessary because unrar will output "Creating <outputDirectoryPath>" if it doesn't already exist, which would lead to a bug of having a false, nameless archive entry
+				if (outputPath !== outputDirectoryPath) {
+					onEntry({
+						type: extractionActionSubject[action],
+						outputPath
+					})
+				}
 			})
 		return unrarProcess
 	}
