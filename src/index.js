@@ -58,6 +58,13 @@ module.exports = async ({
 			)
 		}
 
+		/* TODO:
+			remove the "7z" references since that has been replaced by abstract archiveLib
+			also... maybe no need for this distinction anyway - consider ditching the absolute path stuff
+			filePathFromLocalArchive7z could just be filePathFromLocalArchive if the leading / is ditched
+			Depends on whether the change will negatively impact getOutputPath expressiveness
+			or something to that effect
+		*/
 		const archiveDirectoryPaths7z = archiveContents
 			.filter(({ type }) => type === 'directory')
 			.map(({ path }) => path)
