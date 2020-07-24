@@ -17,7 +17,7 @@
 	{
 		"label": "GZIP",
 		"mimetypes": [ "application/gzip" ],
-		"extensions": [ "gz", "z" ]
+		"extensions": [ "gz", "z", "tgz" ]
 	},
 	{
 		"label": "TAR",

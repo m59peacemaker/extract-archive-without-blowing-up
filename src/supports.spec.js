@@ -8,6 +8,16 @@ test('supports.extension', t => {
 	)
 
 	t.equal(
+		supports.extension('tgz'),
+		true
+	)
+
+	t.equal(
+		supports.extension('tar'),
+		true
+	)
+
+	t.equal(
 		supports.extension('rolfchopter'),
 		false
 	)
