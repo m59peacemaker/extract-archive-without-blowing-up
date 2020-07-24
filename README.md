@@ -7,7 +7,6 @@ It is good to check the size of an archive's contents before extracting them so 
 ## TODO
 
 - It would be nice for the exodus bundled binaries to live elsewhere and be an npm dependency of this package. The exodus bundles here should then be cleaned out of the git history.
-- if node-7z stops relying on a polyfill, it can replace the fork that is currently used
 
 ## supported formats
 
