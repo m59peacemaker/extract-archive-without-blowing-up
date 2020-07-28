@@ -32,6 +32,7 @@ extractArchive.supports.mimetype('application/zip') // true
 			maximumOutputBytes: 1e+6 * 25, // 25MB, default Infinity
 			shouldExtract: extractArchive.shouldExtractArchives,
 			removeExtractedArchives: true // default false
+			getPassword: ({ filePath, filePathFromLocalArchive, filePathFromRootArchive }) => ''
 		})
 
 		await Promise.all(files.map(({

@@ -5,6 +5,7 @@ const supports = require('./supports')
 
 const ROOT_ARCHIVE_FILEPATH = '/'
 const ARCHIVE_TOO_LARGE = 'ARCHIVE_TOO_LARGE'
+const WRONG_PASSWORD = 'WRONG_PASSWORD'
 
 const stripExtension = filePath => filePath.replace(/\.[^.$]+$/, '')
 const True = () => true
@@ -32,7 +33,8 @@ module.exports = async ({
 	getOutputPath = getOutputPathDefault,
 	shouldExtract = False,
 	removeExtractedArchives = false,
-	maximumOutputBytes = Infinity
+	maximumOutputBytes = Infinity,
+	getPassword = () => ''
 }) => {
 	let remainingOutputBytes = maximumOutputBytes
 
@@ -42,10 +44,11 @@ module.exports = async ({
 		inputFilePath,
 		outputPath,
 		rootParentPath,
-		removeArchive
+		removeArchive,
+		password
 	}) => {
 		const archiveLib = archiveLibs[path.extname(inputFilePath) === '.rar' ? 'unrar' : 'seven']
-		const { contents: archiveContents } = await archiveLib.list(inputFilePath)
+		const { contents: archiveContents } = await archiveLib.list(inputFilePath, { password })
 
 		remainingOutputBytes = remainingOutputBytes === Infinity
 			? Infinity
@@ -88,10 +91,9 @@ module.exports = async ({
 			}
 
 			const filePathData = {
-				filePathFromLocalArchive7z,
+				filePath,
 				filePathFromLocalArchive,
-				filePathFromRootArchive,
-				filePath
+				filePathFromRootArchive
 			}
 
 			const { file, subExtraction } = [
@@ -107,7 +109,8 @@ module.exports = async ({
 							inputFilePath: filePath,
 							outputPath: getOutputPath({ filePath, filePathFromLocalArchive, filePathFromRootArchive }),
 							removeArchive: removeExtractedArchives,
-							rootParentPath: filePathFromRootArchive
+							rootParentPath: filePathFromRootArchive,
+							password: getPassword(filePathData)
 						})
 					})
 				},
@@ -116,13 +119,13 @@ module.exports = async ({
 					result: () => ({ file: { outputType: 'file' } })
 				}
 			]
-				.find(({ condition }) => condition(filePathData))
+				.find(({ condition }) => condition({ ...filePathData, filePathFromLocalArchive7z }))
 				.result()
 			extractedFiles.push({ ...file, filePath, filePathFromRootArchive, filePathFromLocalArchive })
 			subExtraction && subExtractions.push(subExtraction)
 		}
 
-		await archiveLib.extract({ inputFilePath, outputPath, onFile })
+		await archiveLib.extract({ inputFilePath, outputPath, password, onFile })
 
 		if (removeArchive) {
 			await fs.promises.unlink(inputFilePath)
@@ -134,32 +137,42 @@ module.exports = async ({
 			.reduce((acc, [ k, v ]) => Object.assign(acc, { [k]: v }), {})
 	}
 
-	const outputPath = getOutputPath({
+	const filePathData = {
 		filePath: inputFilePath,
 		filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
 		filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH,
-	})
-	const { extractedFiles } = await extractArchive({
-		inputFilePath,
-		outputPath,
-		rootParentPath: '/',
-		removeArchive: false
-	})
-	return {
-		rootArchive: {
-			filePath: inputFilePath,
-			outputType: 'file',
-			filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
-			filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
-		},
-		rootOutput: {
-			filePath: outputPath,
-			outputType: 'directory',
-			isExtractedArchive: true,
-			filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
-			filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
-		},
-		extractedFiles
+	}
+
+	const outputPath = getOutputPath(filePathData)
+	
+	try {
+		const { extractedFiles } = await extractArchive({
+			inputFilePath,
+			outputPath,
+			rootParentPath: '/',
+			removeArchive: false,
+			password: getPassword(filePathData)
+		})
+		return {
+			rootArchive: {
+				filePath: inputFilePath,
+				outputType: 'file',
+				filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
+				filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
+			},
+			rootOutput: {
+				filePath: outputPath,
+				outputType: 'directory',
+				isExtractedArchive: true,
+				filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
+				filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
+			},
+			extractedFiles
+		}
+	} catch (error) {
+		throw /wrong password/i.test(error.message)
+			? Object.assign(error, { code: WRONG_PASSWORD })
+			: error
 	}
 }
 
@@ -168,5 +181,6 @@ Object.assign(module.exports, {
 	shouldExtractArchives,
 	maintainStructure,
 	ROOT_ARCHIVE_FILEPATH,
-	ARCHIVE_TOO_LARGE
+	ARCHIVE_TOO_LARGE,
+	WRONG_PASSWORD
 })

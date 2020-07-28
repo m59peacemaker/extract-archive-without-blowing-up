@@ -13,8 +13,8 @@ const seven = {
 			}))
 		}
 	},
-	extract: async ({ inputFilePath, outputPath, onFile }) => {
-		const extraction = sevenLib.extractFull(inputFilePath, outputPath)
+	extract: async ({ inputFilePath, outputPath, password, onFile }) => {
+		const extraction = sevenLib.extractFull(inputFilePath, outputPath, { password })
 		extraction.process.on('data', onFile)
 		return extraction
 	}

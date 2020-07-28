@@ -20,6 +20,15 @@ const reset = async () => {
 require('./supports.spec')
 
 ;(async () => {
+	// console.log(await extractArchive({
+	// 		inputFilePath: path.join(__dirname, '../samples/PCB-GEA0006.7z'),
+	// 		getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
+	// 	})
+	// 	.catch(error => {
+	// 		return error.code === extractArchive.WRONG_PASSWORD ? `it's wrong, what's you're doing` : error.code
+	// 	})
+	//)
+
 	await test('extracts inputFilePath to result of getOutputPath', async t => {
 		try {
 			await fs.outputFile(tmpPath('files', 'foo.txt'), 'some foo text')

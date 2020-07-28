@@ -10,12 +10,13 @@ const extractionActionSubject = {
 }
 
 module.exports = ({ bin }) => {
-	const extract = (inputFilePath, outputDirectoryPath, { onEntry = noop } = {}) => {
+	const extract = (inputFilePath, outputDirectoryPath, password, { onEntry = noop } = {}) => {
 		const unrarProcess = spawn(bin, [
 			'x',
 			// answer "yes" to prompts i.e. to overwrite existing files
 			'-y',
 			inputFilePath,
+			//`-p${password || '-'}`,
 			// unrar requires output directory path to have a trailing slash
 			path.join(outputDirectoryPath, '/')
 		])
