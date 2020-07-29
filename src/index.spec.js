@@ -20,15 +20,6 @@ const reset = async () => {
 require('./supports.spec')
 
 ;(async () => {
-	// console.log(await extractArchive({
-	// 		inputFilePath: path.join(__dirname, '../samples/PCB-GEA0006.7z'),
-	// 		getOutputPath: extractArchive.maintainStructure(tmpPath('extracted'))
-	// 	})
-	// 	.catch(error => {
-	// 		return error.code === extractArchive.WRONG_PASSWORD ? `it's wrong, what's you're doing` : error.code
-	// 	})
-	//)
-
 	await test('extracts inputFilePath to result of getOutputPath', async t => {
 		try {
 			await fs.outputFile(tmpPath('files', 'foo.txt'), 'some foo text')
@@ -514,6 +505,53 @@ require('./supports.spec')
 					}
 				])
 			)
+			await reset()
+		}
+	)
+
+	await test(
+		`encrypted nested archive with no password results in { outputType: 'file', isEncryptedArchive: true }`,
+		async t => {
+			const { extractedFiles } = await extractArchive({
+				inputFilePath: `${__dirname}/../samples/contains-encrypted-zip-password-123.7z`,
+				getOutputPath: ({ filePath }) => tmpPath('extracted'),
+				shouldExtract: extractArchive.shouldExtractArchives
+			})
+			t.deepEqual(
+				sortByFilePathFromRootArchive(extractedFiles.map(({ filePath, ...file }) => file)),
+				sortByFilePathFromRootArchive([
+					{
+						outputType: "file",
+						filePathFromRootArchive: "/foo.txt",
+						filePathFromLocalArchive: "/foo.txt"
+					},
+					{
+						outputType: "file",
+						filePathFromRootArchive: "/x.zip",
+						filePathFromLocalArchive: "/x.zip",
+						isEncryptedArchive: true
+					},
+				])
+			)
+			await reset()
+		}
+	)
+
+	await test(
+		`encrypted nested archive with no password results in { outputType: 'file', isEncryptedArchive: true }`,
+		async t => {
+			await extractArchive({
+				inputFilePath: `${__dirname}/../samples/encrypted-password-123.7z`,
+				getOutputPath: ({ filePath }) => tmpPath('extracted'),
+				shouldExtract: extractArchive.shouldExtractArchives
+			})
+				.then(() => {
+					t.fail('did not throw')
+				})
+				.catch(error => {
+					t.ok('threw error', error)
+					t.equal(error.code, extractArchive.WRONG_PASSWORD, 'error code is WRONG_PASSWORD')
+				})
 			await reset()
 		}
 	)

@@ -28,12 +28,15 @@ const getOutputPathDefault = () => {
 	throw new Error('getOutputPath function is required')
 }
 
+const isWrongPasswordError = error => /Wrong password/i.test(error.message)
+
 module.exports = async ({
 	inputFilePath,
 	getOutputPath = getOutputPathDefault,
 	shouldExtract = False,
 	removeExtractedArchives = false,
 	maximumOutputBytes = Infinity,
+	processTimeoutMs = null, // limit the time, in ms, a child process can run
 	getPassword = () => ''
 }) => {
 	let remainingOutputBytes = maximumOutputBytes
@@ -48,7 +51,7 @@ module.exports = async ({
 		password
 	}) => {
 		const archiveLib = archiveLibs[path.extname(inputFilePath) === '.rar' ? 'unrar' : 'seven']
-		const { contents: archiveContents } = await archiveLib.list(inputFilePath, { password })
+		const { contents: archiveContents } = await archiveLib.list(inputFilePath, { password, timeout: processTimeoutMs })
 
 		remainingOutputBytes = remainingOutputBytes === Infinity
 			? Infinity
@@ -103,16 +106,28 @@ module.exports = async ({
 				},
 				{
 					condition: shouldExtract,
-					result: () => ({
-						file: { outputType: 'directory', isExtractedArchive: true },
-						subExtraction: extractArchive({
-							inputFilePath: filePath,
-							outputPath: getOutputPath({ filePath, filePathFromLocalArchive, filePathFromRootArchive }),
-							removeArchive: removeExtractedArchives,
-							rootParentPath: filePathFromRootArchive,
-							password: getPassword(filePathData)
-						})
-					})
+					result: () => {
+						const file = { outputType: 'directory', isExtractedArchive: true }
+						return {
+							file,
+							subExtraction: extractArchive({
+								inputFilePath: filePath,
+								outputPath: getOutputPath({ filePath, filePathFromLocalArchive, filePathFromRootArchive }),
+								removeArchive: removeExtractedArchives,
+								rootParentPath: filePathFromRootArchive,
+								password: getPassword(filePathData)
+							})
+								.catch(error => {
+									if (isWrongPasswordError(error)) {
+										delete file.isExtractedArchive
+										Object.assign(file, { outputType: 'file', isEncryptedArchive: true })
+										return { extractedFiles: [] }
+									} else {
+										throw error
+									}
+								})
+						}
+					}
 				},
 				{
 					condition: True,
@@ -121,11 +136,13 @@ module.exports = async ({
 			]
 				.find(({ condition }) => condition({ ...filePathData, filePathFromLocalArchive7z }))
 				.result()
-			extractedFiles.push({ ...file, filePath, filePathFromRootArchive, filePathFromLocalArchive })
+			// NOTE: the current api/implementation is { password } related stuff is unfortunate... be sure that `file` is mutated, not replaced (see the .catch above)
+			const extractedFile = Object.assign(file, { filePath, filePathFromRootArchive, filePathFromLocalArchive })
+			extractedFiles.push(extractedFile)
 			subExtraction && subExtractions.push(subExtraction)
 		}
 
-		await archiveLib.extract({ inputFilePath, outputPath, password, onFile })
+		await archiveLib.extract({ inputFilePath, outputPath, password, timeout: processTimeoutMs, onFile })
 
 		if (removeArchive) {
 			await fs.promises.unlink(inputFilePath)
@@ -144,35 +161,31 @@ module.exports = async ({
 	}
 
 	const outputPath = getOutputPath(filePathData)
-	
-	try {
-		const { extractedFiles } = await extractArchive({
-			inputFilePath,
-			outputPath,
-			rootParentPath: '/',
-			removeArchive: false,
-			password: getPassword(filePathData)
+	const { extractedFiles } = await extractArchive({
+		inputFilePath,
+		outputPath,
+		rootParentPath: '/',
+		removeArchive: false,
+		password: getPassword(filePathData)
+	})
+		.catch(error => {
+			throw Object.assign(error, { code: isWrongPasswordError(error) ? WRONG_PASSWORD : error.code })
 		})
-		return {
-			rootArchive: {
-				filePath: inputFilePath,
-				outputType: 'file',
-				filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
-				filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
-			},
-			rootOutput: {
-				filePath: outputPath,
-				outputType: 'directory',
-				isExtractedArchive: true,
-				filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
-				filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
-			},
-			extractedFiles
-		}
-	} catch (error) {
-		throw /wrong password/i.test(error.message)
-			? Object.assign(error, { code: WRONG_PASSWORD })
-			: error
+	return {
+		rootArchive: {
+			filePath: inputFilePath,
+			outputType: 'file',
+			filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
+			filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
+		},
+		rootOutput: {
+			filePath: outputPath,
+			outputType: 'directory',
+			isExtractedArchive: true,
+			filePathFromRootArchive: ROOT_ARCHIVE_FILEPATH,
+			filePathFromLocalArchive: ROOT_ARCHIVE_FILEPATH
+		},
+		extractedFiles
 	}
 }
 

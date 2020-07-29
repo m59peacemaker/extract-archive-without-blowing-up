@@ -32,6 +32,7 @@ extractArchive.supports.mimetype('application/zip') // true
 			maximumOutputBytes: 1e+6 * 25, // 25MB, default Infinity
 			shouldExtract: extractArchive.shouldExtractArchives,
 			removeExtractedArchives: true // default false
+			processTimeoutMs: 10000, // default null, limit the time, in ms, a child process can run
 			getPassword: ({ filePath, filePathFromLocalArchive, filePathFromRootArchive }) => ''
 		})
 
