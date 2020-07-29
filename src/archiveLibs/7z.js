@@ -21,8 +21,8 @@ module.exports = ({ bin }) => Object
 				const options = { $bin: bin, ...optionsArg }
 				const betterArgs = [
 					_,
-					a == null ? options : a,
-					a == null ? null : options
+					aIsOptions ? options : a,
+					...(aIsOptions ? [] : [ options ])
 				]
 				const process = fn(...betterArgs)
 				const promise = new Promise((resolve, reject) => {
